@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>My Workout Plan</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --text: #f0f0f0;
+    --muted: #888;
+    --upper: #3b82f6;
+    --upper-bg: #1a2a3e;
+    --lower: #8b5cf6;
+    --lower-bg: #221a3e;
+    --pullup: #f59e0b;
+    --pullup-bg: #2e230a;
+    --core: #10b981;
+    --core-bg: #0a2e1e;
+    --warm: #f97316;
+    --cool: #6b7280;
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 2rem;
+  }
+
+  header {
+    padding: 3rem 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  header p {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.35rem;
+  }
+
+  .meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .pill {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  /* Day tabs */
+  .day-nav {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .day-nav::-webkit-scrollbar { display: none; }
+
+  .day-btn {
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+    font-family: var(--font);
+  }
+
+  .day-btn.active-upper { background: var(--upper-bg); color: var(--upper); border-color: var(--upper); }
+  .day-btn.active-lower { background: var(--lower-bg); color: var(--lower); border-color: var(--lower); }
+
+  /* Day panels */
+  .day-panel { display: none; padding: 1.25rem; }
+  .day-panel.active { display: block; }
+
+  .day-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+
+  .day-subtitle {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+  }
+
+  /* Section headers */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    margin: 1.25rem 0 0.75rem;
+  }
+
+  .section-label.warm { background: #2e1a0a; color: var(--warm); }
+  .section-label.upper { background: var(--upper-bg); color: var(--upper); }
+  .section-label.lower { background: var(--lower-bg); color: var(--lower); }
+  .section-label.core { background: var(--core-bg); color: var(--core); }
+  .section-label.cool { background: #1a1a1a; color: var(--cool); }
+
+  .section-time {
+    margin-left: auto;
+    font-size: 0.7rem;
+    font-weight: 500;
+    opacity: 0.7;
+  }
+
+  /* Exercise cards */
+  .ex {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.625rem;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .ex:active { background: var(--surface2); }
+  .ex.pullup-ex { border-color: #3d2e0a; background: #1c1600; }
+
+  .ex-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .ex-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.3;
+    flex: 1;
+  }
+
+  .ex-sets {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .sets-upper { background: var(--upper-bg); color: var(--upper); }
+  .sets-lower { background: var(--lower-bg); color: var(--lower); }
+  .sets-pullup { background: var(--pullup-bg); color: var(--pullup); }
+  .sets-core { background: var(--core-bg); color: var(--core); }
+  .sets-time { background: #1a2e1a; color: #6ee7b7; }
+
+  .ex-detail {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.3rem;
+    line-height: 1.5;
+  }
+
+  .ex-tip {
+    display: none;
+    font-size: 0.75rem;
+    color: #f59e0b;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+  }
+
+  .ex.open .ex-tip { display: block; }
+
+  .pullup-tag {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    background: var(--pullup-bg);
+    color: var(--pullup);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+  }
+
+  /* Week overview strip */
+  .week-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    padding: 1rem 1.25rem 0;
+  }
+
+  .week-day {
+    border-radius: 10px;
+    padding: 0.6rem 0.4rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    background: var(--surface);
+  }
+
+  .week-day.upper { background: var(--upper-bg); border-color: var(--upper); }
+  .week-day.lower { background: var(--lower-bg); border-color: var(--lower); }
+  .week-day .wd-day { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; }
+  .week-day.upper .wd-day { color: #93c5fd; }
+  .week-day.lower .wd-day { color: #c4b5fd; }
+  .week-day .wd-name { font-size: 0.72rem; font-weight: 700; }
+  .week-day.upper .wd-name { color: var(--upper); }
+  .week-day.lower .wd-name { color: var(--lower); }
+  .week-day .wd-focus { font-size: 0.6rem; color: var(--muted); margin-top: 0.15rem; }
+
+  .chevron {
+    float: right;
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 2px;
+    transition: transform 0.15s;
+  }
+  .ex.open .chevron { transform: rotate(180deg); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>My Workout Plan 💪</h1>
+  <p>5 days/week · 90 min/session · Pull-up focus</p>
+  <div class="meta">
+    <span class="pill">Beginner</span>
+    <span class="pill">Upper / Lower split</span>
+    <span class="pill">Pull-up prep</span>
+  </div>
+</header>
+
+<div class="week-strip">
+  <div class="week-day upper" onclick="showDay('mon')">
+    <div class="wd-day">Mon</div>
+    <div class="wd-name">Upper A</div>
+    <div class="wd-focus">Pull</div>
+  </div>
+  <div class="week-day lower" onclick="showDay('tue')">
+    <div class="wd-day">Tue</div>
+    <div class="wd-name">Lower A</div>
+    <div class="wd-focus">Quads</div>
+  </div>
+  <div class="week-day upper" onclick="showDay('wed')">
+    <div class="wd-day">Wed</div>
+    <div class="wd-name">Upper B</div>
+    <div class="wd-focus">Pull</div>
+  </div>
+  <div class="week-day lower" onclick="showDay('thu')">
+    <div class="wd-day">Thu</div>
+    <div class="wd-name">Lower B</div>
+    <div class="wd-focus">Hips</div>
+  </div>
+  <div class="week-day upper" onclick="showDay('fri')">
+    <div class="wd-day">Fri</div>
+    <div class="wd-name">Upper C</div>
+    <div class="wd-focus">Push</div>
+  </div>
+</div>
+
+<nav class="day-nav">
+  <button class="day-btn active-upper" id="tab-mon" onclick="showDay('mon')">Mon</button>
+  <button class="day-btn active-lower" id="tab-tue" onclick="showDay('tue')">Tue</button>
+  <button class="day-btn active-upper" id="tab-wed" onclick="showDay('wed')">Wed</button>
+  <button class="day-btn active-lower" id="tab-thu" onclick="showDay('thu')">Thu</button>
+  <button class="day-btn active-upper" id="tab-fri" onclick="showDay('fri')">Fri</button>
+</nav>
+
+<!-- MON -->
+<div class="day-panel active" id="panel-mon">
+  <div class="day-title">Monday — Upper A</div>
+  <div class="day-subtitle">Pull focus · 90 min</div>
+
+  <div class="section-label warm">🔥 Warm-up <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cardio + dynamic stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">5 min bike/treadmill, then arm circles, band pull-aparts, shoulder rolls</div>
+    <div class="ex-tip">Easy pace — get blood moving, not sweating hard</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label upper">↑ Pull <span class="section-time">35 min</span></div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Kneeling lat pulldown<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-pullup">5 × 10</span></div>
+    <div class="ex-detail">Kneel facing cable, pull bar to upper chest, core braced</div>
+    <div class="ex-tip">Rest 90 sec · First exercise — do it fresh. Priority movement.</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Deadhang<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-pullup">3 × max</span></div>
+    <div class="ex-detail">Full hang from bar, shoulders packed down, hold as long as possible</div>
+    <div class="ex-tip">Rest 90 sec · Log your time each session — beat it next week</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Seated cable row</span><span class="ex-sets sets-upper">3 × 10</span></div>
+    <div class="ex-detail">Pull to belly button, squeeze shoulder blades at the end</div>
+    <div class="ex-tip">Rest 90 sec · Think "elbows to pockets"</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Dumbbell bicep curl</span><span class="ex-sets sets-upper">3 × 12</span></div>
+    <div class="ex-detail">Alternating, supinate wrist at top, no swinging</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label upper">↑ Push <span class="section-time">25 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Dumbbell bench press</span><span class="ex-sets sets-upper">3 × 10</span></div>
+    <div class="ex-detail">Flat bench, lower to chest, control the descent</div>
+    <div class="ex-tip">Rest 90 sec · Dumbbells are safer than barbell for beginners</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Dumbbell shoulder press</span><span class="ex-sets sets-upper">3 × 10</span></div>
+    <div class="ex-detail">Seated, press overhead, don't arch lower back</div>
+    <div class="ex-tip">Rest 90 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cable tricep pushdown</span><span class="ex-sets sets-upper">3 × 12</span></div>
+    <div class="ex-detail">Rope attachment, elbows tucked, full extension</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label core">◈ Core <span class="section-time">10 min</span></div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Side plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 30 sec</span></div>
+    <div class="ex-detail">Elbow under shoulder, hips lifted, straight line — both sides</div>
+    <div class="ex-tip">Rest 45 sec · Lateral stability transfers to hanging control</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Long lever PPT plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 20–30s</span></div>
+    <div class="ex-detail">Arms extended forward, tuck pelvis to flatten lower back</div>
+    <div class="ex-tip">Rest 45 sec · Hardest plank — builds the hollow body position needed for pull-ups</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label cool">❄ Cool-down <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Lats, chest, shoulder stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">Hold each 30 sec — focus on lats and biceps after pull work</div>
+    <div class="ex-tip">Don't skip this — flexibility improves when muscles are warm</div>
+    <span class="chevron">▼</span>
+  </div>
+</div>
+
+<!-- TUE -->
+<div class="day-panel" id="panel-tue">
+  <div class="day-title">Tuesday — Lower A</div>
+  <div class="day-subtitle">Quad focus · 90 min</div>
+
+  <div class="section-label warm">🔥 Warm-up <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cardio + dynamic stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">5 min bike, then leg swings, hip circles, walking lunges, bodyweight squats</div>
+    <div class="ex-tip">10 reps each movement, keep it flowing</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label lower">↓ Lower — quad focus <span class="section-time">50 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Goblet squat</span><span class="ex-sets sets-lower">4 × 10</span></div>
+    <div class="ex-detail">Dumbbell at chest, squat to parallel, chest up</div>
+    <div class="ex-tip">Rest 90 sec · Knees track over toes</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Leg press</span><span class="ex-sets sets-lower">3 × 12</span></div>
+    <div class="ex-detail">Feet shoulder-width, don't lock knees at top</div>
+    <div class="ex-tip">Rest 90 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Leg extension (machine)</span><span class="ex-sets sets-lower">3 × 12</span></div>
+    <div class="ex-detail">Isolates quads, controlled lowering phase</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Leg curl (machine)</span><span class="ex-sets sets-lower">3 × 12</span></div>
+    <div class="ex-detail">Lying or seated, hamstring isolation</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Calf raises</span><span class="ex-sets sets-lower">3 × 15</span></div>
+    <div class="ex-detail">Standing on a step or machine, full range of motion</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label core">◈ Core <span class="section-time">10 min</span></div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Decline plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 30 sec</span></div>
+    <div class="ex-detail">Feet on bench, forearms on floor, hips level</div>
+    <div class="ex-tip">Rest 45 sec · Loads upper abs and shoulders</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Side plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 30 sec</span></div>
+    <div class="ex-detail">Both sides, keep hips lifted</div>
+    <div class="ex-tip">Rest 45 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label cool">❄ Cool-down <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Hip flexor, hamstring, quad stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">Hold each 30 sec — legs worked hard today</div>
+    <div class="ex-tip">Spend extra time on quads and hip flexors</div>
+    <span class="chevron">▼</span>
+  </div>
+</div>
+
+<!-- WED -->
+<div class="day-panel" id="panel-wed">
+  <div class="day-title">Wednesday — Upper B</div>
+  <div class="day-subtitle">Pull focus · 90 min</div>
+
+  <div class="section-label warm">🔥 Warm-up <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cardio + dynamic stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">5 min bike/treadmill, then arm circles, band pull-aparts, shoulder rolls</div>
+    <div class="ex-tip">Easy pace to get blood moving</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label upper">↑ Pull <span class="section-time">35 min</span></div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Kneeling lat pulldown<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-pullup">5 × 10</span></div>
+    <div class="ex-detail">Second session of the week — aim to match or beat Monday's weight</div>
+    <div class="ex-tip">Rest 90 sec · First exercise again while fresh</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Deadhang<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-pullup">3 × max</span></div>
+    <div class="ex-detail">Full hang, shoulders packed, hold as long as possible</div>
+    <div class="ex-tip">Rest 90 sec · Compare times to Monday</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Single-arm dumbbell row</span><span class="ex-sets sets-upper">3 × 10</span></div>
+    <div class="ex-detail">Knee on bench, pull to hip, elbow stays close — each side</div>
+    <div class="ex-tip">Rest 90 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Hammer curl</span><span class="ex-sets sets-upper">3 × 12</span></div>
+    <div class="ex-detail">Neutral grip (palms facing each other), targets brachialis</div>
+    <div class="ex-tip">Rest 60 sec · Variation from Monday's curl</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label upper">↑ Push <span class="section-time">25 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Incline dumbbell press</span><span class="ex-sets sets-upper">3 × 10</span></div>
+    <div class="ex-detail">Bench at 30–45°, targets upper chest</div>
+    <div class="ex-tip">Rest 90 sec · Variation from Monday's flat press</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Lateral raise</span><span class="ex-sets sets-upper">3 × 15</span></div>
+    <div class="ex-detail">Light dumbbells, raise to shoulder height, slight bend in elbows</div>
+    <div class="ex-tip">Rest 60 sec · Go lighter than you think</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cable tricep pushdown</span><span class="ex-sets sets-upper">3 × 12</span></div>
+    <div class="ex-detail">Bar attachment this time for variation</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label core">◈ Core <span class="section-time">10 min</span></div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Long lever PPT plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 20–30s</span></div>
+    <div class="ex-detail">Arms extended forward, pelvis tucked, lower back flat</div>
+    <div class="ex-tip">Rest 45 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Decline plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 30 sec</span></div>
+    <div class="ex-detail">Feet on bench, forearms on floor, hips level</div>
+    <div class="ex-tip">Rest 45 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label cool">❄ Cool-down <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Lats, chest, shoulder stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">Hold each 30 sec</div>
+    <div class="ex-tip">Don't skip — flexibility improves when muscles are warm</div>
+    <span class="chevron">▼</span>
+  </div>
+</div>
+
+<!-- THU -->
+<div class="day-panel" id="panel-thu">
+  <div class="day-title">Thursday — Lower B</div>
+  <div class="day-subtitle">Hip focus · 90 min</div>
+
+  <div class="section-label warm">🔥 Warm-up <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cardio + dynamic stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">5 min bike, then leg swings, hip circles, bodyweight RDLs</div>
+    <div class="ex-tip">Focus on hip mobility today</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label lower">↓ Lower — hip focus <span class="section-time">50 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Romanian deadlift (RDL)</span><span class="ex-sets sets-lower">4 × 10</span></div>
+    <div class="ex-detail">Hinge at hip, feel hamstring stretch, back flat throughout</div>
+    <div class="ex-tip">Rest 90 sec · Main movement today — extra set</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Bulgarian split squat</span><span class="ex-sets sets-lower">3 × 8</span></div>
+    <div class="ex-detail">Rear foot on bench, front foot forward, lower straight down — each leg</div>
+    <div class="ex-tip">Rest 90 sec · Start with bodyweight — very challenging</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Leg curl (machine)</span><span class="ex-sets sets-lower">3 × 12</span></div>
+    <div class="ex-detail">Lying or seated, full range of motion</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Hip thrust</span><span class="ex-sets sets-lower">3 × 12</span></div>
+    <div class="ex-detail">Shoulders on bench, weight on hips, drive hips to ceiling</div>
+    <div class="ex-tip">Rest 60 sec · Great glute builder</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Calf raises</span><span class="ex-sets sets-lower">3 × 15</span></div>
+    <div class="ex-detail">Standing on a step or machine</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label core">◈ Core <span class="section-time">10 min</span></div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Side plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 30 sec</span></div>
+    <div class="ex-detail">Both sides — focus on keeping hips high</div>
+    <div class="ex-tip">Rest 45 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Long lever PPT plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 20–30s</span></div>
+    <div class="ex-detail">Arms extended, pelvis tucked under</div>
+    <div class="ex-tip">Rest 45 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label cool">❄ Cool-down <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Hip flexor, hamstring, glute stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">Hold each 30 sec — hip-heavy day, be thorough</div>
+    <div class="ex-tip">Spend extra time here — hips worked very hard today</div>
+    <span class="chevron">▼</span>
+  </div>
+</div>
+
+<!-- FRI -->
+<div class="day-panel" id="panel-fri">
+  <div class="day-title">Friday — Upper C</div>
+  <div class="day-subtitle">Push focus · 90 min</div>
+
+  <div class="section-label warm">🔥 Warm-up <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cardio + dynamic stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">5 min bike/treadmill, then arm circles, band pull-aparts, shoulder rolls</div>
+    <div class="ex-tip">Easy pace to get blood moving</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label upper">↑ Push — main focus <span class="section-time">35 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Dumbbell bench press</span><span class="ex-sets sets-upper">4 × 10</span></div>
+    <div class="ex-detail">Flat bench, full range, control the descent</div>
+    <div class="ex-tip">Rest 90 sec · Extra set — push is priority today</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Dumbbell shoulder press</span><span class="ex-sets sets-upper">3 × 10</span></div>
+    <div class="ex-detail">Seated, press overhead</div>
+    <div class="ex-tip">Rest 90 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cable fly or pec deck</span><span class="ex-sets sets-upper">3 × 12</span></div>
+    <div class="ex-detail">Chest isolation, squeeze at centre, control the return</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Cable tricep pushdown</span><span class="ex-sets sets-upper">3 × 12</span></div>
+    <div class="ex-detail">Rope attachment, full extension</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label upper">↑ Pull — maintenance <span class="section-time">25 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Seated cable row</span><span class="ex-sets sets-upper">3 × 10</span></div>
+    <div class="ex-detail">Pull to belly button, shoulder blades squeeze at end</div>
+    <div class="ex-tip">Rest 90 sec · Pull gets lighter work today — already trained Mon + Wed</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Face pull</span><span class="ex-sets sets-upper">3 × 15</span></div>
+    <div class="ex-detail">Cable at head height, pull to face, elbows flare out</div>
+    <div class="ex-tip">Rest 60 sec · Rear delts and rotator cuff health</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Dumbbell bicep curl</span><span class="ex-sets sets-upper">3 × 12</span></div>
+    <div class="ex-detail">Alternating, supinate at top</div>
+    <div class="ex-tip">Rest 60 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label core">◈ Core <span class="section-time">10 min</span></div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Decline plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 30 sec</span></div>
+    <div class="ex-detail">Feet on bench, forearms on floor, hips level</div>
+    <div class="ex-tip">Rest 45 sec</div>
+    <span class="chevron">▼</span>
+  </div>
+  <div class="ex pullup-ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Side plank<span class="pullup-tag">pull-up</span></span><span class="ex-sets sets-core">3 × 30 sec</span></div>
+    <div class="ex-detail">Both sides</div>
+    <div class="ex-tip">Rest 45 sec · End of the week — push through</div>
+    <span class="chevron">▼</span>
+  </div>
+
+  <div class="section-label cool">❄ Cool-down <span class="section-time">10 min</span></div>
+  <div class="ex" onclick="toggle(this)">
+    <div class="ex-top"><span class="ex-name">Full body stretch</span><span class="ex-sets sets-time">10 min</span></div>
+    <div class="ex-detail">Chest, lats, shoulders, hip flexors, hamstrings — end of week, be thorough</div>
+    <div class="ex-tip">Well done — rest Saturday and Sunday</div>
+    <span class="chevron">▼</span>
+  </div>
+</div>
+
+<script>
+  function showDay(day) {
+    document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + day).classList.add('active');
+    document.querySelectorAll('.day-btn').forEach(b => {
+      b.style.background = '';
+      b.style.color = '';
+      b.style.borderColor = '';
+    });
+    const btn = document.getElementById('tab-' + day);
+    const isUpper = ['mon','wed','fri'].includes(day);
+    btn.style.background = isUpper ? 'var(--upper-bg)' : 'var(--lower-bg)';
+    btn.style.color = isUpper ? 'var(--upper)' : 'var(--lower)';
+    btn.style.borderColor = isUpper ? 'var(--upper)' : 'var(--lower)';
+    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  function toggle(el) {
+    el.classList.toggle('open');
+  }
+
+  // Highlight today's tab on load
+  const days = ['sun','mon','tue','wed','thu','fri','sat'];
+  const today = days[new Date().getDay()];
+  const workoutDays = ['mon','tue','wed','thu','fri'];
+  if (workoutDays.includes(today)) showDay(today);
+</script>
+</body>
+</html>
